@@ -78,16 +78,16 @@ var _WS = {
 
 
     send: function (message) {
-      if (!message.length) {
-        alert('Empty message not allowed !');
-    } else {
-        _WS.s.send(message);
-    }
-},
+        if (!message.length) {
+            alert('Empty message not allowed !');
+        } else {
+            _WS.s.send(message);
+        }
+    },
     close: function () {
         console.log("close!!");
         _WS.s.close();
-  }
+    }
 };
 
 
@@ -97,41 +97,44 @@ function checkFile(){
         return;
     }
     
-    chrome.tabs.reload(tail_source_tab.id)
+    chrome.tabs.reload(tail_source_tab.id);
     
-    chrome.tabs.executeScript(tail_source_tab.id, {code:'document.body.innerText'}, function(result){
-        if( tail_display_lock == true ){
-            return;
-        }
-
-        if( tail_current_text !== null ){
-          tail_current_text = result[0].substr(tail_read_position);
-      }else{
-        tail_current_text = '';
-    }
-    tail_read_position = result[0].length;
-
-    if( tail_current_text == '' ){
-        return;
-    }
-
-
-
-    chrome.windows.getAll(function(windows){
-        for( var i = 0; i < windows.length; i++ ){
-            chrome.tabs.getAllInWindow(window.id, function(tabs){
-              for( var j = 0; j < tabs.length; j++ ){
-                  if( tabs[j].url.indexOf('file') == 0 || tabs[j].url.indexOf('http') == 0 ){
-                    if( tail_current_text != '' ){
-                        _WS.s.send("ss@"+tail_current_text);
-                // chrome.tabs.executeScript(tabs[j].id, {code:'console.log("%c" + decodeURIComponent("' + encodeURIComponent(tail_current_text) + '"), "color:#238C00;font-weight:bold;");'});
+    chrome.tabs.executeScript(
+        tail_source_tab.id, {code:'document.body.innerText'}, function(result){
+            if( tail_display_lock == true ){
+                return;
             }
+
+            if( tail_current_text !== null ){
+              tail_current_text = result[0].substr(tail_read_position);
+            }else{
+                tail_current_text = '';
+            }
+
+            tail_read_position = result[0].length;
+            if( tail_current_text == '' ){
+                return;
+            }
+            chrome.windows.getAll(
+                function(windows){
+                    for( var i = 0; i < windows.length; i++ ){
+                        chrome.tabs.getAllInWindow(
+                            window.id, function(tabs){
+                                for( var j = 0; j < tabs.length; j++ ){
+                                    if( tabs[j].url.indexOf('file') == 0 || tabs[j].url.indexOf('http') == 0 ){
+                                        if( tail_current_text != '' ){
+                                            _WS.s.send("ss@"+tail_current_text);//行分解が必要。
+                                        }
+                                    }
+                                }
+                                tail_current_text = '';
+                                tail_display_lock = false;
+                            }
+                        )
+                    }
+                }
+            )
         }
-    }
-    tail_current_text = '';
-    tail_display_lock = false;
-})
-        }
-    })
-});
+    );
 }
+
